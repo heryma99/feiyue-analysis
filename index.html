@@ -104,6 +104,24 @@ a.dl:hover{background:#0d0f14}
   </tr>
   <tr><td colspan="6"><div class="formula" id="fL"></div></td></tr>
 
+  <!-- B2 谷仓贴标 -->
+  <tr><td class="sec" colspan="6">B2. 谷仓贴标（按规格预估：每件1张SKU标 · 每箱2张箱嘜 · 6件/箱）</td></tr>
+  <tr>
+    <td>搬仓双数</td>
+    <td><input class="in" id="gPairs" type="number" value="8954"></td>
+    <td>每箱 <input class="in sm" id="gPerCt" type="number" value="6"> 件</td>
+    <td class="ratio" id="gCartons">—</td>
+    <td>SKU标 <span class="big" id="gSku">0</span> 张</td>
+    <td>箱嘜 <span class="big" id="gMk">0</span> 张</td>
+  </tr>
+  <tr>
+    <td>单价 $/张</td>
+    <td>SKU标 <input class="in sm" id="gSkuP" type="number" value="0.62"></td>
+    <td>箱嘜 <input class="in sm" id="gMkP" type="number" value="0.30"></td>
+    <td colspan="3">贴标总费用 <span class="big" id="gCost">$0</span> <span style="font-size:11px;opacity:.7">（参考价·待谷仓报价替换）</span></td>
+  </tr>
+  <tr><td colspan="6"><div class="formula" id="fG"></div></td></tr>
+
   <!-- FTL -->
   <tr><td class="sec" colspan="6">C. FTL 整车运输 KY → NJ</td></tr>
   <tr>
@@ -125,7 +143,7 @@ a.dl:hover{background:#0d0f14}
   </tr>
 </tbody>
 </table>
-<div class="note">💡 比例 = 实际量 ÷ 飞跃基准量。处置费单价 = $5,823 ÷ 10,000 = $0.5823/双（原报价未含外箱拆装、城市认证费）。销毁实际量默认 = 53,007 − 8,954 = <b>44,053 双</b>（含 是 超额 33,437 + 不选 10,616）；若销毁口径不同，直接改「实际量」即可重算。贴标费邮件未给单价，仅给工期（1,500双/天）。</div>
+<div class="note">💡 比例 = 实际量 ÷ 飞跃基准量。处置费单价 = $5,823 ÷ 10,000 = $0.5823/双（原报价未含外箱拆装、城市认证费）。销毁实际量默认 = 53,007 − 8,954 = <b>44,053 双</b>（含 是 超额 33,437 + 不选 10,616）；若销毁口径不同，直接改「实际量」即可重算。贴标费邮件未给单价，仅给工期（1,500双/天）。<br><b>谷仓贴标（B2）</b>按你的规格预估：每件 1 张 SKU 标、每箱 2 张箱嘜、6 件/箱；单价默认为参考值（SKU标 $0.62/张取自 YUSEN 合同 Ticketing 条款、箱嘜 $0.30/张），<b>拿到谷仓实际报价后直接改单价即可实时重算</b>，并自动并入项目总预估。</div>
 </div>
 
 <h2>④ 搬仓 SKU 清单（是否选款=是，含整年要求）</h2>
@@ -487,6 +505,21 @@ function recalc(){
   document.getElementById('lDays').textContent=lDays;
   document.getElementById('fL').textContent='工期=CEIL('+lActQ.toLocaleString()+'÷'+lCap+')='+lDays+'天 ｜ 比例 '+lRatio.toFixed(3)+'× (基准 '+lBaseQ.toLocaleString()+'双→'+Math.ceil(lBaseQ/lCap)+'天)';
 
+  // B2 谷仓贴标
+  const gPairs=+document.getElementById('gPairs').value;
+  const gPerCt=(+document.getElementById('gPerCt').value)||6;
+  const gCartons=Math.ceil(gPairs/gPerCt);
+  const gSku=gPairs;
+  const gMk=gCartons*2;
+  const gSkuP=+document.getElementById('gSkuP').value;
+  const gMkP=+document.getElementById('gMkP').value;
+  const gCost=gSku*gSkuP+gMk*gMkP;
+  document.getElementById('gCartons').textContent=gCartons.toLocaleString()+' 箱';
+  document.getElementById('gSku').textContent=gSku.toLocaleString();
+  document.getElementById('gMk').textContent=gMk.toLocaleString();
+  document.getElementById('gCost').textContent='$'+gCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('fG').textContent='箱数=CEIL('+gPairs.toLocaleString()+'÷'+gPerCt+')='+gCartons+' ｜ SKU标='+gSku.toLocaleString()+'张(每件1) ｜ 箱嘜='+gMk.toLocaleString()+'张(每箱2) ｜ 费='+gSku.toLocaleString()+'×$'+gSkuP+'+'+gMk.toLocaleString()+'×$'+gMkP+'=$'+gCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
   // C FTL
   const fBaseQ=+document.getElementById('fBaseQ').value;
   const fActQ=+document.getElementById('fActQ').value;
@@ -502,7 +535,7 @@ function recalc(){
   document.getElementById('fF').textContent='每车双数='+perLoad.toFixed(0)+' ｜ 车次数=CEIL('+fActQ.toLocaleString()+'÷'+perLoad.toFixed(0)+')='+fLoads+' ｜ A=$'+fCostA.toLocaleString()+' B=$'+fCostB.toLocaleString()+' ｜ 比例 '+fRatio.toFixed(3)+'×';
 
   // 合计
-  const totA=dCost+fCostA, totB=dCost+fCostB;
+  const totA=dCost+fCostA+gCost, totB=dCost+fCostB+gCost;
   document.getElementById('totA').textContent='$'+totA.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById('totB').textContent='$'+totB.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
