@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FEIYUE 库存处置 · 飞跃报价 vs 实际</title>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--line:#262b36;--txt:#e6e9ef;--mut:#8b93a7;
+--acc:#4f9dff;--grn:#3ecf8e;--red:#ff6b6b;--amber:#ffb454;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.6 -apple-system,'Segoe UI',Roboto,'Microsoft YaHei',sans-serif;}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
+h1{font-size:22px;margin:0 0 4px;font-weight:700}
+h2{font-size:17px;margin:32px 0 12px;padding-left:10px;border-left:3px solid var(--acc);font-weight:600}
+.sub{color:var(--mut);font-size:13px;margin-bottom:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:14px 0}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:760px){.g4,.g3{grid-template-columns:1fr}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.kpi .v{font-size:22px;font-weight:700}.kpi .l{color:var(--mut);font-size:12px;margin-top:2px}
+.kpi .v.g{color:var(--grn)}.kpi .v.r{color:var(--red)}.kpi .v.b{color:var(--acc)}.kpi .v.a{color:var(--amber)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:600;position:sticky;top:0;background:var(--card)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.calc{width:100%;border-collapse:collapse;font-size:12.5px}
+.calc th,.calc td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.calc th{color:var(--mut);font-weight:600;background:#13161d}
+.calc td.sec{background:rgba(79,157,255,.06);font-weight:600;color:var(--acc)}
+.in{background:#0d0f14;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:4px 7px;width:96px;font:13px tabular-nums}
+.in:focus{outline:none;border-color:var(--acc)}
+.in.sm{width:74px}
+.ratio{color:var(--amber);font-weight:700;font-variant-numeric:tabular-nums}
+.big{font-size:17px;font-weight:700;color:var(--acc)}
+.note{background:rgba(255,180,84,.08);border:1px solid rgba(255,180,84,.3);border-radius:8px;padding:11px 14px;font-size:12.5px;color:#ffd9a0;margin:12px 0}
+.ok{background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.3);border-radius:8px;padding:11px 14px;font-size:13px;margin:12px 0}
+.formula{background:#0d0f14;border:1px dashed var(--line);border-radius:7px;padding:9px 12px;margin-top:8px;font-size:11.5px;color:var(--mut);font-family:Consolas,monospace}
+.tag{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.tag.m{background:rgba(62,207,142,.15);color:var(--grn)}.tag.d{background:rgba(255,107,107,.15);color:var(--red)}
+a.dl{color:var(--acc);text-decoration:none;font-size:12.5px;border:1px solid var(--line);padding:5px 12px;border-radius:7px;display:inline-block;margin-top:6px}
+a.dl:hover{background:#0d0f14}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>FEIYUE 库存处置方案（修正版）</h1>
+<div class="sub">数据源：FEIYUE_Inventory_06_08_2026(2).xlsx · 邮件：Cheryl Parsons / Yusen（2026-07-16）· 修正：实际搬仓量 = 整年要求合计 8,954 双</div>
+
+<div class="ok">✅ 修正口径：之前误把「是否选款=是」的<b>物理库存 42,391 双</b>当作搬仓量；正确理解应为该批的<b>整年要求（实际需求）合计 8,954 双</b>。销毁量 = 总量 53,007 − 8,954 = <b>44,053 双</b>。下表「飞跃报价基准 / 实际 / 比例」三栏可逐项改数实时换算。</div>
+
+<h2>① SKU 数量统计</h2>
+<div class="grid g4">
+  <div class="kpi"><div class="v b">53,007</div><div class="l">总库存双数</div></div>
+  <div class="kpi"><div class="v">306</div><div class="l">尺码级 SKU 行</div></div>
+  <div class="kpi"><div class="v a">54</div><div class="l">产品款(匹配SKC)</div></div>
+  <div class="kpi"><div class="v a">68</div><div class="l">Style 设计款</div></div>
+</div>
+
+<h2>② 搬仓 vs 销毁（修正后）</h2>
+<div class="grid g3">
+  <div class="kpi"><div class="v g">165</div><div class="l">保留款 SKU 数(是否选款=是)</div></div>
+  <div class="kpi"><div class="v g">8,954</div><div class="l">实际搬仓双数(整年要求合计)</div></div>
+  <div class="kpi"><div class="v g">42,391</div><div class="l">该批物理在库双数</div></div>
+</div>
+<div class="grid g3" style="margin-top:14px">
+  <div class="kpi"><div class="v r">141</div><div class="l">不选 SKU 数</div></div>
+  <div class="kpi"><div class="v r">44,053</div><div class="l">实际销毁双数(53,007−8,954)</div></div>
+  <div class="kpi"><div class="v r">10,616</div><div class="l">不选物理双数</div></div>
+</div>
+
+<h2>③ 价格换算器：飞跃报价基准 / 实际 / 比例</h2>
+<div class="card">
+<table class="calc">
+<thead><tr>
+  <th>成本项</th>
+  <th>飞跃报价基准量</th><th>飞跃报价</th>
+  <th>实际量（可改）</th><th>比例 实际/基准</th><th>实际费用</th>
+</tr></thead>
+<tbody>
+  <!-- 处置费 -->
+  <tr><td class="sec" colspan="6">A. 处置费 Disposition（在飞跃/Yusen 就地销毁）</td></tr>
+  <tr>
+    <td>处置双数</td>
+    <td><input class="in" id="dBaseQ" type="number" value="10000"></td>
+    <td><input class="in" id="dBaseP" type="number" value="5823"> $</td>
+    <td><input class="in" id="dActQ" type="number" value="44,053"></td>
+    <td class="ratio" id="dRatio">—</td>
+    <td><span class="big" id="dCost">$0.00</span></td>
+  </tr>
+  <tr><td colspan="6"><div class="formula" id="fD"></div></td></tr>
+
+  <!-- 贴标 -->
+  <tr><td class="sec" colspan="6">B. 贴标项目 Labeling（搬仓前贴标，改在谷仓做）</td></tr>
+  <tr>
+    <td>贴标双数</td>
+    <td><input class="in" id="lBaseQ" type="number" value="43391"></td>
+    <td>—（仅工期）</td>
+    <td><input class="in" id="lActQ" type="number" value="8,954"></td>
+    <td class="ratio" id="lRatio">—</td>
+    <td><span class="big" id="lDays">0</span> 天</td>
+  </tr>
+  <tr><td colspan="6"><div class="formula" id="fL"></div></td></tr>
+
+  <!-- FTL -->
+  <tr><td class="sec" colspan="6">C. FTL 整车运输 KY → NJ</td></tr>
+  <tr>
+    <td>运输双数</td>
+    <td><input class="in" id="fBaseQ" type="number" value="53007"></td>
+    <td><input class="in sm" id="fRateA" type="number" value="3963">$A / <input class="in sm" id="fRateB" type="number" value="3330">$B 每车</td>
+    <td><input class="in" id="fActQ" type="number" value="8,954"></td>
+    <td class="ratio" id="fRatio">—</td>
+    <td>A <span class="big" id="fCostA">$0</span><br>B <span class="big" id="fCostB">$0</span></td>
+  </tr>
+  <tr><td colspan="6"><div class="formula" id="fF"></div></td></tr>
+
+  <!-- 合计 -->
+  <tr style="border-top:2px solid var(--acc)">
+    <td class="sec">项目总预估</td>
+    <td colspan="3"></td>
+    <td></td>
+    <td>A <span class="big" id="totA">$0</span><br>B <span class="big" id="totB">$0</span></td>
+  </tr>
+</tbody>
+</table>
+<div class="note">💡 比例 = 实际量 ÷ 飞跃基准量。处置费单价 = $5,823 ÷ 10,000 = $0.5823/双（原报价未含外箱拆装、城市认证费）。销毁实际量默认 = 53,007 − 8,954 = <b>44,053 双</b>（含 是 超额 33,437 + 不选 10,616）；若销毁口径不同，直接改「实际量」即可重算。贴标费邮件未给单价，仅给工期（1,500双/天）。</div>
+</div>
+
+<h2>④ 搬仓 SKU 清单（是否选款=是，含整年要求）</h2>
+<div class="card">
+  <div class="grid g3">
+    <div class="kpi"><div class="v g">165</div><div class="l">SKU 数</div></div>
+    <div class="kpi"><div class="v g">42,391</div><div class="l">物理在库双数</div></div>
+    <div class="kpi"><div class="v g">8,954</div><div class="l">整年要求合计(实际搬仓)</div></div>
+  </div>
+  <p class="sub" style="margin-top:10px">说明：此批为保留款，但仅「整年要求」合计 8,954 双为实际搬仓量；物理在库 42,391 双中超出部分（33,437）按销毁处理。下方「整年要求」列即每行实际应搬量。</p>
+  <a class="dl" href="feiyue_move_list.csv" download>⬇ 下载搬仓清单 CSV（165 行，含整年要求）</a>
+  <div class="scroll" style="margin-top:12px">
+    <table><thead><tr><th>SKU</th><th>Style</th><th>StyleDesc</th><th>ColorDesc</th><th>Sizerun</th><th class="num">Pairs物理</th><th class="num">整年要求</th></tr></thead>
+    <tbody><tr><td>FU100097M-M100</td><td>FU100097M</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M100</td><td class='num'>2,308</td><td class='num'>283</td></tr>
+<tr><td>FU100096M-M090</td><td>FU100096M</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M090</td><td class='num'>2,259</td><td class='num'>148</td></tr>
+<tr><td>FU100097M-M090</td><td>FU100097M</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M090</td><td class='num'>2,238</td><td class='num'>208</td></tr>
+<tr><td>FU100096M-M100</td><td>FU100096M</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M100</td><td class='num'>2,017</td><td class='num'>201</td></tr>
+<tr><td>FU100097M-M080</td><td>FU100097M</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M080</td><td class='num'>1,302</td><td class='num'>129</td></tr>
+<tr><td>FU100097M-M120</td><td>FU100097M</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M120</td><td class='num'>1,272</td><td class='num'>198</td></tr>
+<tr><td>FU100096W-M080</td><td>FU100096W</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M080</td><td class='num'>1,203</td><td class='num'>29</td></tr>
+<tr><td>FU100097W-M080</td><td>FU100097W</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M080</td><td class='num'>1,149</td><td class='num'>26</td></tr>
+<tr><td>FU100096W-M070</td><td>FU100096W</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M070</td><td class='num'>1,148</td><td class='num'>35</td></tr>
+<tr><td>FU100148M-M100</td><td>FU100148M</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M100</td><td class='num'>1,124</td><td class='num'>78</td></tr>
+<tr><td>FU100146M-M090</td><td>FU100146M</td><td>FELO1920 IVRY CVS/BLUE/R</td><td>IVORY/BLUE/RED</td><td>M090</td><td class='num'>1,100</td><td class='num'>98</td></tr>
+<tr><td>FU100096M-M120</td><td>FU100096M</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M120</td><td class='num'>1,031</td><td class='num'>141</td></tr>
+<tr><td>FU100096M-M080</td><td>FU100096M</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M080</td><td class='num'>1,009</td><td class='num'>91</td></tr>
+<tr><td>FU100115M-M090</td><td>FU100115M</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M090</td><td class='num'>826</td><td class='num'>123</td></tr>
+<tr><td>FU100097W-M070</td><td>FU100097W</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M070</td><td class='num'>798</td><td class='num'>32</td></tr>
+<tr><td>FU100148M-M090</td><td>FU100148M</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M090</td><td class='num'>797</td><td class='num'>57</td></tr>
+<tr><td>FU100167M-M100</td><td>FU100167M</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M100</td><td class='num'>791</td><td class='num'>165</td></tr>
+<tr><td>FU100116M-M090</td><td>FU100116M</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M090</td><td class='num'>775</td><td class='num'>190</td></tr>
+<tr><td>FU100115M-M100</td><td>FU100115M</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M100</td><td class='num'>750</td><td class='num'>167</td></tr>
+<tr><td>FU100096W-M060</td><td>FU100096W</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M060</td><td class='num'>700</td><td class='num'>35</td></tr>
+<tr><td>FU100116M-M100</td><td>FU100116M</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M100</td><td class='num'>690</td><td class='num'>258</td></tr>
+<tr><td>FU100096M-M110</td><td>FU100096M</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M110</td><td class='num'>656</td><td class='num'>253</td></tr>
+<tr><td>FU100167M-M090</td><td>FU100167M</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M090</td><td class='num'>581</td><td class='num'>122</td></tr>
+<tr><td>FU100177W-M080</td><td>FU100177W</td><td>FE LO 1920 BLACK CVS/BLA</td><td>BLACK/BLACK</td><td>M080</td><td class='num'>572</td><td class='num'>259</td></tr>
+<tr><td>FU100116W-M080</td><td>FU100116W</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M080</td><td class='num'>554</td><td class='num'>20</td></tr>
+<tr><td>FU100097M-M070</td><td>FU100097M</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M070</td><td class='num'>545</td><td class='num'>158</td></tr>
+<tr><td>FU100146M-M120</td><td>FU100146M</td><td>FELO1920 IVRY CVS/BLUE/R</td><td>IVORY/BLUE/RED</td><td>M120</td><td class='num'>541</td><td class='num'>93</td></tr>
+<tr><td>FU100146M-M080</td><td>FU100146M</td><td>FELO1920 IVRY CVS/BLUE/R</td><td>IVORY/BLUE/RED</td><td>M080</td><td class='num'>516</td><td class='num'>60</td></tr>
+<tr><td>FU100167M-M120</td><td>FU100167M</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M120</td><td class='num'>493</td><td class='num'>116</td></tr>
+<tr><td>FU100167M-M110</td><td>FU100167M</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M110</td><td class='num'>450</td><td class='num'>208</td></tr>
+<tr><td>FU100096M-M130</td><td>FU100096M</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M130</td><td class='num'>410</td><td class='num'>79</td></tr>
+<tr><td>FU100116W-M070</td><td>FU100116W</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M070</td><td class='num'>407</td><td class='num'>25</td></tr>
+<tr><td>FU100177M-M080</td><td>FU100177M</td><td>FE LO 1920 BLACK CVS/BLA</td><td>BLACK/BLACK</td><td>M080</td><td class='num'>396</td><td class='num'>99</td></tr>
+<tr><td>FU100097M-M110</td><td>FU100097M</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M110</td><td class='num'>381</td><td class='num'>356</td></tr>
+<tr><td>FU100096W-M100</td><td>FU100096W</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M100</td><td class='num'>378</td><td class='num'>64</td></tr>
+<tr><td>FU100096W-M090</td><td>FU100096W</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M090</td><td class='num'>366</td><td class='num'>47</td></tr>
+<tr><td>FU100148M-M110</td><td>FU100148M</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M110</td><td class='num'>359</td><td class='num'>98</td></tr>
+<tr><td>FU100174M-M090</td><td>FU100174M</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M090</td><td class='num'>345</td><td class='num'>106</td></tr>
+<tr><td>FU100115M-M120</td><td>FU100115M</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M120</td><td class='num'>340</td><td class='num'>117</td></tr>
+<tr><td>FU100190M-M100</td><td>FU100190M</td><td>FE LO 1920 IVORY</td><td>IVORY</td><td>M100</td><td class='num'>338</td><td class='num'>97</td></tr>
+<tr><td>FU100097W-M060</td><td>FU100097W</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M060</td><td class='num'>307</td><td class='num'>32</td></tr>
+<tr><td>FU100116W-M090</td><td>FU100116W</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M090</td><td class='num'>303</td><td class='num'>33</td></tr>
+<tr><td>FU100115M-M080</td><td>FU100115M</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M080</td><td class='num'>296</td><td class='num'>76</td></tr>
+<tr><td>FU100190M-M110</td><td>FU100190M</td><td>FE LO 1920 IVORY</td><td>IVORY</td><td>M110</td><td class='num'>276</td><td class='num'>123</td></tr>
+<tr><td>FU100116W-M060</td><td>FU100116W</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M060</td><td class='num'>270</td><td class='num'>24</td></tr>
+<tr><td>FU100148M-M130</td><td>FU100148M</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M130</td><td class='num'>255</td><td class='num'>31</td></tr>
+<tr><td>FU100116M-M080</td><td>FU100116M</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M080</td><td class='num'>247</td><td class='num'>117</td></tr>
+<tr><td>FU100115M-M110</td><td>FU100115M</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M110</td><td class='num'>237</td><td class='num'>210</td></tr>
+<tr><td>FU100097W-M090</td><td>FU100097W</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M090</td><td class='num'>236</td><td class='num'>43</td></tr>
+<tr><td>FU100148M-M120</td><td>FU100148M</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M120</td><td class='num'>233</td><td class='num'>55</td></tr>
+<tr><td>FU100146M-M100</td><td>FU100146M</td><td>FELO1920 IVRY CVS/BLUE/R</td><td>IVORY/BLUE/RED</td><td>M100</td><td class='num'>225</td><td class='num'>133</td></tr>
+<tr><td>FU100175M-M130</td><td>FU100175M</td><td>FE LO1920 NAVY CV WHT/RD</td><td>NAVY/WH/RD/BL/GM</td><td>M130</td><td class='num'>222</td><td class='num'>46</td></tr>
+<tr><td>FU100190M-M090</td><td>FU100190M</td><td>FE LO 1920 IVORY</td><td>IVORY</td><td>M090</td><td class='num'>219</td><td class='num'>72</td></tr>
+<tr><td>FU100174M-M100</td><td>FU100174M</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M100</td><td class='num'>206</td><td class='num'>94</td></tr>
+<tr><td>FU100177W-M070</td><td>FU100177W</td><td>FE LO 1920 BLACK CVS/BLA</td><td>BLACK/BLACK</td><td>M070</td><td class='num'>205</td><td class='num'>156</td></tr>
+<tr><td>FU100116W-M100</td><td>FU100116W</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M100</td><td class='num'>187</td><td class='num'>44</td></tr>
+<tr><td>FU100115M-M130</td><td>FU100115M</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M130</td><td class='num'>185</td><td class='num'>66</td></tr>
+<tr><td>FU100167M-M130</td><td>FU100167M</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M130</td><td class='num'>175</td><td class='num'>65</td></tr>
+<tr><td>FU100167M-M080</td><td>FU100167M</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M080</td><td class='num'>167</td><td class='num'>75</td></tr>
+<tr><td>FU100193M-M100</td><td>FU100193M</td><td>FE LO 1920 OFF WHITE</td><td>OFF WHITE</td><td>M100</td><td class='num'>156</td><td class='num'>111</td></tr>
+<tr><td>FU100167M-M140</td><td>FU100167M</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M140</td><td class='num'>154</td><td class='num'>35</td></tr>
+<tr><td>FU100174M-M130</td><td>FU100174M</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M130</td><td class='num'>149</td><td class='num'>19</td></tr>
+<tr><td>FU100096W-M050</td><td>FU100096W</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M050</td><td class='num'>145</td><td class='num'>23</td></tr>
+<tr><td>FU100116M-M130</td><td>FU100116M</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M130</td><td class='num'>145</td><td class='num'>102</td></tr>
+<tr><td>FU100097W-M100</td><td>FU100097W</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M100</td><td class='num'>142</td><td class='num'>58</td></tr>
+<tr><td>FU100193M-M120</td><td>FU100193M</td><td>FE LO 1920 OFF WHITE</td><td>OFF WHITE</td><td>M120</td><td class='num'>142</td><td class='num'>78</td></tr>
+<tr><td>FU100188M-M130</td><td>FU100188M</td><td>FE MID 1920  TRIPLE OFFW</td><td>OFF WHITE</td><td>M130</td><td class='num'>138</td><td class='num'>0</td></tr>
+<tr><td>FU100174M-M120</td><td>FU100174M</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M120</td><td class='num'>133</td><td class='num'>54</td></tr>
+<tr><td>FU100190M-M120</td><td>FU100190M</td><td>FE LO 1920 IVORY</td><td>IVORY</td><td>M120</td><td class='num'>129</td><td class='num'>68</td></tr>
+<tr><td>FU100174W-M060</td><td>FU100174W</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M060</td><td class='num'>126</td><td class='num'>107</td></tr>
+<tr><td>FU100146M-M130</td><td>FU100146M</td><td>FELO1920 IVRY CVS/BLUE/R</td><td>IVORY/BLUE/RED</td><td>M130</td><td class='num'>114</td><td class='num'>53</td></tr>
+<tr><td>FU100174W-M070</td><td>FU100174W</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M070</td><td class='num'>114</td><td class='num'>114</td></tr>
+<tr><td>FU100193M-M090</td><td>FU100193M</td><td>FE LO 1920 OFF WHITE</td><td>OFF WHITE</td><td>M090</td><td class='num'>104</td><td class='num'>82</td></tr>
+<tr><td>FU100177M-M090</td><td>FU100177M</td><td>FE LO 1920 BLACK CVS/BLA</td><td>BLACK/BLACK</td><td>M090</td><td class='num'>103</td><td class='num'>103</td></tr>
+<tr><td>FU100237U-M060</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M060</td><td class='num'>100</td><td class='num'>17</td></tr>
+<tr><td>FU100237U-M070</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M070</td><td class='num'>99</td><td class='num'>20</td></tr>
+<tr><td>FU100174M-M140</td><td>FU100174M</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M140</td><td class='num'>96</td><td class='num'>8</td></tr>
+<tr><td>FU100096W-M110</td><td>FU100096W</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M110</td><td class='num'>95</td><td class='num'>80</td></tr>
+<tr><td>FU100174W-M050</td><td>FU100174W</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M050</td><td class='num'>94</td><td class='num'>58</td></tr>
+<tr><td>FU100116M-M120</td><td>FU100116M</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M120</td><td class='num'>93</td><td class='num'>93</td></tr>
+<tr><td>FU100174M-M110</td><td>FU100174M</td><td>FE LO 1920 WHITE/RAINBOW</td><td>WHITE/RAINBOW</td><td>M110</td><td class='num'>83</td><td class='num'>83</td></tr>
+<tr><td>FU100175M-M120</td><td>FU100175M</td><td>FE LO1920 NAVY CV WHT/RD</td><td>NAVY/WH/RD/BL/GM</td><td>M120</td><td class='num'>82</td><td class='num'>82</td></tr>
+<tr><td>FU100115M-M070</td><td>FU100115M</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M070</td><td class='num'>80</td><td class='num'>80</td></tr>
+<tr><td>FU100116M-M110</td><td>FU100116M</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M110</td><td class='num'>74</td><td class='num'>74</td></tr>
+<tr><td>FU100237U-M050</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M050</td><td class='num'>61</td><td class='num'>12</td></tr>
+<tr><td>FU100237U-M080</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M080</td><td class='num'>59</td><td class='num'>19</td></tr>
+<tr><td>FU100097W-M110</td><td>FU100097W</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M110</td><td class='num'>55</td><td class='num'>55</td></tr>
+<tr><td>FU100177M-M130</td><td>FU100177M</td><td>FE LO 1920 BLACK CVS/BLA</td><td>BLACK/BLACK</td><td>M130</td><td class='num'>53</td><td class='num'>53</td></tr>
+<tr><td>FU100177W-M060</td><td>FU100177W</td><td>FE LO 1920 BLACK CVS/BLA</td><td>BLACK/BLACK</td><td>M060</td><td class='num'>52</td><td class='num'>52</td></tr>
+<tr><td>FU100251U-M110</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M110</td><td class='num'>51</td><td class='num'>51</td></tr>
+<tr><td>FU100148M-M080</td><td>FU100148M</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M080</td><td class='num'>50</td><td class='num'>35</td></tr>
+<tr><td>FU100096M-M140</td><td>FU100096M</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M140</td><td class='num'>46</td><td class='num'>43</td></tr>
+<tr><td>FU100192M-M100</td><td>FU100192M</td><td>FE LO 1920 BLACK TUMBLD/</td><td>BLACK</td><td>M100</td><td class='num'>46</td><td class='num'>46</td></tr>
+<tr><td>FU100192M-M090</td><td>FU100192M</td><td>FE LO 1920 BLACK TUMBLD/</td><td>BLACK</td><td>M090</td><td class='num'>42</td><td class='num'>42</td></tr>
+<tr><td>FU100176M-M130</td><td>FU100176M</td><td>FE LO 1920 GREYCV WHT/RD</td><td>GREY/WH/RD/BL/GM</td><td>M130</td><td class='num'>41</td><td class='num'>41</td></tr>
+<tr><td>FU100237U-M040</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M040</td><td class='num'>41</td><td class='num'>0</td></tr>
+<tr><td>FU100176M-M100</td><td>FU100176M</td><td>FE LO 1920 GREYCV WHT/RD</td><td>GREY/WH/RD/BL/GM</td><td>M100</td><td class='num'>40</td><td class='num'>40</td></tr>
+<tr><td>FU100190M-M130</td><td>FU100190M</td><td>FE LO 1920 IVORY</td><td>IVORY</td><td>M130</td><td class='num'>38</td><td class='num'>38</td></tr>
+<tr><td>FU100251U-M120</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M120</td><td class='num'>36</td><td class='num'>36</td></tr>
+<tr><td>FU100237U-M030</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M030</td><td class='num'>35</td><td class='num'>0</td></tr>
+<tr><td>FU100116W-M110</td><td>FU100116W</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M110</td><td class='num'>34</td><td class='num'>34</td></tr>
+<tr><td>FK100030C-M110</td><td>FK100030C</td><td>FE LO 1920 KIDS EL BLK/B</td><td>BLACK/BLUE/RED</td><td>M110</td><td class='num'>32</td><td class='num'>32</td></tr>
+<tr><td>FU100193M-M130</td><td>FU100193M</td><td>FE LO 1920 OFF WHITE</td><td>OFF WHITE</td><td>M130</td><td class='num'>31</td><td class='num'>31</td></tr>
+<tr><td>FE02070102-M130</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M130</td><td class='num'>24</td><td class='num'>0</td></tr>
+<tr><td>FU100193M-M140</td><td>FU100193M</td><td>FE LO 1920 OFF WHITE</td><td>OFF WHITE</td><td>M140</td><td class='num'>24</td><td class='num'>24</td></tr>
+<tr><td>FU100251U-M100</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M100</td><td class='num'>24</td><td class='num'>24</td></tr>
+<tr><td>FU100192M-M130</td><td>FU100192M</td><td>FE LO 1920 BLACK TUMBLD/</td><td>BLACK</td><td>M130</td><td class='num'>17</td><td class='num'>17</td></tr>
+<tr><td>FE02070102-M080</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M080</td><td class='num'>16</td><td class='num'>0</td></tr>
+<tr><td>FU100115M-M140</td><td>FU100115M</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M140</td><td class='num'>15</td><td class='num'>15</td></tr>
+<tr><td>FU100251U-M060</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M060</td><td class='num'>14</td><td class='num'>14</td></tr>
+<tr><td>FU100251U-M080</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M080</td><td class='num'>14</td><td class='num'>14</td></tr>
+<tr><td>FU100116M-M070</td><td>FU100116M</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M070</td><td class='num'>13</td><td class='num'>13</td></tr>
+<tr><td>FK100030C-M020</td><td>FK100030C</td><td>FE LO 1920 KIDS EL BLK/B</td><td>BLACK/BLUE/RED</td><td>M020</td><td class='num'>12</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M030</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M030</td><td class='num'>10</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M130</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M130</td><td class='num'>8</td><td class='num'>0</td></tr>
+<tr><td>FK100030C-M010</td><td>FK100030C</td><td>FE LO 1920 KIDS EL BLK/B</td><td>BLACK/BLUE/RED</td><td>M010</td><td class='num'>7</td><td class='num'>0</td></tr>
+<tr><td>FU100237U-M140</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M140</td><td class='num'>7</td><td class='num'>7</td></tr>
+<tr><td>FK100030C-M120</td><td>FK100030C</td><td>FE LO 1920 KIDS EL BLK/B</td><td>BLACK/BLUE/RED</td><td>M120</td><td class='num'>5</td><td class='num'>0</td></tr>
+<tr><td>FK100030C-M130</td><td>FK100030C</td><td>FE LO 1920 KIDS EL BLK/B</td><td>BLACK/BLUE/RED</td><td>M130</td><td class='num'>5</td><td class='num'>0</td></tr>
+<tr><td>FK100030C-M030</td><td>FK100030C</td><td>FE LO 1920 KIDS EL BLK/B</td><td>BLACK/BLUE/RED</td><td>M030</td><td class='num'>4</td><td class='num'>0</td></tr>
+<tr><td>FU100097M-M140</td><td>FU100097M</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M140</td><td class='num'>4</td><td class='num'>0</td></tr>
+<tr><td>FU100188M-M100</td><td>FU100188M</td><td>FE MID 1920  TRIPLE OFFW</td><td>OFF WHITE</td><td>M100</td><td class='num'>4</td><td class='num'>0</td></tr>
+<tr><td>FU100237U-M020</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M020</td><td class='num'>4</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M090</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M090</td><td class='num'>3</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M140</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M140</td><td class='num'>3</td><td class='num'>0</td></tr>
+<tr><td>FU100096M-M070</td><td>FU100096M</td><td>FE LO 1920 WHT CVS/BLU/R</td><td>WHITE/BLUE/RED</td><td>M070</td><td class='num'>3</td><td class='num'>0</td></tr>
+<tr><td>FU100251U-M070</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M070</td><td class='num'>3</td><td class='num'>0</td></tr>
+<tr><td>FU100251U-M140</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M140</td><td class='num'>3</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M050</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M050</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M100</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M100</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M110</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M110</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M120</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M120</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FU100097M-M130</td><td>FU100097M</td><td>FE LO 1920 BLK CVS/BLU/R</td><td>BLACK/BLUE/RED</td><td>M130</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FU100116M-M140</td><td>FU100116M</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M140</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FU100116W-M050</td><td>FU100116W</td><td>FE MID 1920 BLK CVS /WHT</td><td>BLACK/WHITE/RED</td><td>M050</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FU100177M-M070</td><td>FU100177M</td><td>FE LO 1920 BLACK CVS/BLA</td><td>BLACK/BLACK</td><td>M070</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FU100192M-M120</td><td>FU100192M</td><td>FE LO 1920 BLACK TUMBLD/</td><td>BLACK</td><td>M120</td><td class='num'>2</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M020</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M020</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M040</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M040</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M060</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M060</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M080</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M080</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M090</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M090</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M100</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M100</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M110</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M110</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE01612001-M120</td><td>FE01612001</td><td>FELO1920 CHEV PRT BK/WH/</td><td>BLACK/WHITE/RED</td><td>M120</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M020</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M020</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FE02070102-M070</td><td>FE02070102</td><td>FELO1920EXO WHITE/GREEN</td><td>WHITE/GREEN</td><td>M070</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100146M-M110</td><td>FU100146M</td><td>FELO1920 IVRY CVS/BLUE/R</td><td>IVORY/BLUE/RED</td><td>M110</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100167M-M060</td><td>FU100167M</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M060</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100175M-M110</td><td>FU100175M</td><td>FE LO1920 NAVY CV WHT/RD</td><td>NAVY/WH/RD/BL/GM</td><td>M110</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100176M-M090</td><td>FU100176M</td><td>FE LO 1920 GREYCV WHT/RD</td><td>GREY/WH/RD/BL/GM</td><td>M090</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100177M-M100</td><td>FU100177M</td><td>FE LO 1920 BLACK CVS/BLA</td><td>BLACK/BLACK</td><td>M100</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100188M-M080</td><td>FU100188M</td><td>FE MID 1920  TRIPLE OFFW</td><td>OFF WHITE</td><td>M080</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100188M-M090</td><td>FU100188M</td><td>FE MID 1920  TRIPLE OFFW</td><td>OFF WHITE</td><td>M090</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100188M-M120</td><td>FU100188M</td><td>FE MID 1920  TRIPLE OFFW</td><td>OFF WHITE</td><td>M120</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100190M-M080</td><td>FU100190M</td><td>FE LO 1920 IVORY</td><td>IVORY</td><td>M080</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100193M-M110</td><td>FU100193M</td><td>FE LO 1920 OFF WHITE</td><td>OFF WHITE</td><td>M110</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100237U-M090</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M090</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100237U-M100</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M100</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100237U-M110</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M110</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100237U-M120</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M120</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100237U-M130</td><td>FU100237U</td><td>FELO1920 EXO NEUTGREY/PE</td><td>NEUTRAL GREY/PEW/FRED</td><td>M130</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100251U-M050</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M050</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100251U-M090</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M090</td><td class='num'>1</td><td class='num'>0</td></tr>
+<tr><td>FU100251U-M130</td><td>FU100251U</td><td>FELO1920CNYSNAKE BLK/RED</td><td>BLACK/RED/GUM</td><td>M130</td><td class='num'>1</td><td class='num'>0</td></tr></tbody></table>
+  </div>
+</div>
+
+<h2>⑤ 销毁 SKU 清单（是否选款=不选）</h2>
+<div class="card">
+  <div class="grid g2">
+    <div class="kpi"><div class="v r">141</div><div class="l">不选 SKU 数</div></div>
+    <div class="kpi"><div class="v r">10,616</div><div class="l">物理双数</div></div>
+  </div>
+  <p class="sub" style="margin-top:10px">此 141 个 SKU（10,616 双）为明确销毁项。实际总销毁 44,053 双还包含保留款中超出整年要求的 33,437 双。</p>
+  <a class="dl" href="feiyue_destroy_list.csv" download>⬇ 下载销毁清单 CSV（141 行）</a>
+  <div class="scroll" style="margin-top:12px">
+    <table><thead><tr><th>SKU</th><th>Style</th><th>StyleDesc</th><th>ColorDesc</th><th>Sizerun</th><th class="num">Pairs</th></tr></thead>
+    <tbody><tr><td>FU100260A</td><td>FU100260A</td><td>FEIYUE DRAWSTRING BAG BL</td><td>BLACK</td><td>M000</td><td class='num'>1,048</td></tr>
+<tr><td>FU100115W-M080</td><td>FU100115W</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M080</td><td class='num'>607</td></tr>
+<tr><td>FU100147M-M090</td><td>FU100147M</td><td>FELO1920 NVY CVS/BLUE/RE</td><td>NAVY/BLUE/RED</td><td>M090</td><td class='num'>520</td></tr>
+<tr><td>FU100147M-M100</td><td>FU100147M</td><td>FELO1920 NVY CVS/BLUE/RE</td><td>NAVY/BLUE/RED</td><td>M100</td><td class='num'>497</td></tr>
+<tr><td>FU100115W-M070</td><td>FU100115W</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M070</td><td class='num'>483</td></tr>
+<tr><td>FU100167W-M070</td><td>FU100167W</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M070</td><td class='num'>448</td></tr>
+<tr><td>FU100167W-M080</td><td>FU100167W</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M080</td><td class='num'>405</td></tr>
+<tr><td>FK100031C-M030</td><td>FK100031C</td><td>FELO1920 KIDS EL WHT/BLU</td><td>WHITE/BLUE/RED</td><td>M030</td><td class='num'>400</td></tr>
+<tr><td>FK100031C-M020</td><td>FK100031C</td><td>FELO1920 KIDS EL WHT/BLU</td><td>WHITE/BLUE/RED</td><td>M020</td><td class='num'>367</td></tr>
+<tr><td>FU100115W-M060</td><td>FU100115W</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M060</td><td class='num'>332</td></tr>
+<tr><td>FU100115W-M090</td><td>FU100115W</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M090</td><td class='num'>328</td></tr>
+<tr><td>FK100031C-M010</td><td>FK100031C</td><td>FELO1920 KIDS EL WHT/BLU</td><td>WHITE/BLUE/RED</td><td>M010</td><td class='num'>315</td></tr>
+<tr><td>FU100165M-M090</td><td>FU100165M</td><td>FELO1920 BK TMBLD/BLK LO</td><td>BLACK/WHITE</td><td>M090</td><td class='num'>289</td></tr>
+<tr><td>FK100031C-M130</td><td>FK100031C</td><td>FELO1920 KIDS EL WHT/BLU</td><td>WHITE/BLUE/RED</td><td>M130</td><td class='num'>274</td></tr>
+<tr><td>FU100207U-M100</td><td>FU100207U</td><td>FE LO 1920 SLIP ON BLACK</td><td>BLACK/WHITE</td><td>M100</td><td class='num'>236</td></tr>
+<tr><td>FU100146W-M070</td><td>FU100146W</td><td>FELO1920 IVRY CVS/BLUE/R</td><td>IVORY/BLUE/RED</td><td>M070</td><td class='num'>197</td></tr>
+<tr><td>FU100201U-M100</td><td>FU100201U</td><td>FE LO 1920 WHIT/NAVY CVS</td><td>WHITE/NAVY</td><td>M100</td><td class='num'>191</td></tr>
+<tr><td>FU100167W-M060</td><td>FU100167W</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M060</td><td class='num'>180</td></tr>
+<tr><td>FK100031C-M120</td><td>FK100031C</td><td>FELO1920 KIDS EL WHT/BLU</td><td>WHITE/BLUE/RED</td><td>M120</td><td class='num'>170</td></tr>
+<tr><td>FU100115W-M100</td><td>FU100115W</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M100</td><td class='num'>169</td></tr>
+<tr><td>FU100201U-M090</td><td>FU100201U</td><td>FE LO 1920 WHIT/NAVY CVS</td><td>WHITE/NAVY</td><td>M090</td><td class='num'>159</td></tr>
+<tr><td>FU100146W-M060</td><td>FU100146W</td><td>FELO1920 IVRY CVS/BLUE/R</td><td>IVORY/BLUE/RED</td><td>M060</td><td class='num'>148</td></tr>
+<tr><td>FU100207U-M120</td><td>FU100207U</td><td>FE LO 1920 SLIP ON BLACK</td><td>BLACK/WHITE</td><td>M120</td><td class='num'>128</td></tr>
+<tr><td>FK100028C-M030</td><td>FK100028C</td><td>FELO1920 KID EL RED/BLU/</td><td>RED/BLUE/RED</td><td>M030</td><td class='num'>125</td></tr>
+<tr><td>FU100187M-M130</td><td>FU100187M</td><td>FE MID 1920 IVORY</td><td>IVORY</td><td>M130</td><td class='num'>121</td></tr>
+<tr><td>FK100031C-M110</td><td>FK100031C</td><td>FELO1920 KIDS EL WHT/BLU</td><td>WHITE/BLUE/RED</td><td>M110</td><td class='num'>119</td></tr>
+<tr><td>FU100206U-M130</td><td>FU100206U</td><td>FE LO 1920 SLIP ON OFF W</td><td>OFF WHITE</td><td>M130</td><td class='num'>116</td></tr>
+<tr><td>FU100228U-M080</td><td>FU100228U</td><td>FE LO AV BLACK/IVORY CAN</td><td>BLACK/IVORY</td><td>M080</td><td class='num'>116</td></tr>
+<tr><td>FU100206U-M120</td><td>FU100206U</td><td>FE LO 1920 SLIP ON OFF W</td><td>OFF WHITE</td><td>M120</td><td class='num'>108</td></tr>
+<tr><td>FU100207U-M090</td><td>FU100207U</td><td>FE LO 1920 SLIP ON BLACK</td><td>BLACK/WHITE</td><td>M090</td><td class='num'>107</td></tr>
+<tr><td>FU100206U-M100</td><td>FU100206U</td><td>FE LO 1920 SLIP ON OFF W</td><td>OFF WHITE</td><td>M100</td><td class='num'>96</td></tr>
+<tr><td>FE02021001-M080</td><td>FE02021001</td><td>FELO1920 PWRLFT BK/RD/NM</td><td>BLACK/RD/NIMBUSCLD/GUM</td><td>M080</td><td class='num'>90</td></tr>
+<tr><td>FU100256U-M080</td><td>FU100256U</td><td>FELO 1920 RF BNE WH/WW/G</td><td>BONE/WHISPER WH/GUM</td><td>M080</td><td class='num'>90</td></tr>
+<tr><td>FU100228U-M100</td><td>FU100228U</td><td>FE LO AV BLACK/IVORY CAN</td><td>BLACK/IVORY</td><td>M100</td><td class='num'>82</td></tr>
+<tr><td>FU100206U-M140</td><td>FU100206U</td><td>FE LO 1920 SLIP ON OFF W</td><td>OFF WHITE</td><td>M140</td><td class='num'>74</td></tr>
+<tr><td>FU100252U-M080</td><td>FU100252U</td><td>FELO 1920 RF WHITE</td><td>WHITE</td><td>M080</td><td class='num'>72</td></tr>
+<tr><td>FU100191M-M130</td><td>FU100191M</td><td>FE LO 1920 WHT/GUM/TUMBL</td><td>WHITE</td><td>M130</td><td class='num'>70</td></tr>
+<tr><td>FU100230U-M080</td><td>FU100230U</td><td>FE LO AV WHITE/ROYAL CAN</td><td>WHITE/ROYAL</td><td>M080</td><td class='num'>67</td></tr>
+<tr><td>FU100207U-M130</td><td>FU100207U</td><td>FE LO 1920 SLIP ON BLACK</td><td>BLACK/WHITE</td><td>M130</td><td class='num'>66</td></tr>
+<tr><td>FU100206U-M110</td><td>FU100206U</td><td>FE LO 1920 SLIP ON OFF W</td><td>OFF WHITE</td><td>M110</td><td class='num'>62</td></tr>
+<tr><td>FK100028C-M020</td><td>FK100028C</td><td>FELO1920 KID EL RED/BLU/</td><td>RED/BLUE/RED</td><td>M020</td><td class='num'>61</td></tr>
+<tr><td>FU100229U-M080</td><td>FU100229U</td><td>FE LO AV IVORY/GREEN CVS</td><td>IVORY/GREEN</td><td>M080</td><td class='num'>59</td></tr>
+<tr><td>FE02021001-M070</td><td>FE02021001</td><td>FELO1920 PWRLFT BK/RD/NM</td><td>BLACK/RD/NIMBUSCLD/GUM</td><td>M070</td><td class='num'>57</td></tr>
+<tr><td>FU100201U-M140</td><td>FU100201U</td><td>FE LO 1920 WHIT/NAVY CVS</td><td>WHITE/NAVY</td><td>M140</td><td class='num'>52</td></tr>
+<tr><td>FU100165M-M100</td><td>FU100165M</td><td>FELO1920 BK TMBLD/BLK LO</td><td>BLACK/WHITE</td><td>M100</td><td class='num'>49</td></tr>
+<tr><td>FU100236U-M070</td><td>FU100236U</td><td>FE LO 1920 EXO BLK/ORG/V</td><td>BLACK/ORG/VGLASS</td><td>M070</td><td class='num'>49</td></tr>
+<tr><td>FU100253U-M080</td><td>FU100253U</td><td>FELO 1920 RF BLACK</td><td>BLACK</td><td>M080</td><td class='num'>49</td></tr>
+<tr><td>FU100115W-M110</td><td>FU100115W</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M110</td><td class='num'>39</td></tr>
+<tr><td>FU100148W-M070</td><td>FU100148W</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M070</td><td class='num'>37</td></tr>
+<tr><td>FU100201U-M130</td><td>FU100201U</td><td>FE LO 1920 WHIT/NAVY CVS</td><td>WHITE/NAVY</td><td>M130</td><td class='num'>33</td></tr>
+<tr><td>FU100228U-M090</td><td>FU100228U</td><td>FE LO AV BLACK/IVORY CAN</td><td>BLACK/IVORY</td><td>M090</td><td class='num'>33</td></tr>
+<tr><td>FU100236U-M050</td><td>FU100236U</td><td>FE LO 1920 EXO BLK/ORG/V</td><td>BLACK/ORG/VGLASS</td><td>M050</td><td class='num'>30</td></tr>
+<tr><td>FU100252U-M090</td><td>FU100252U</td><td>FELO 1920 RF WHITE</td><td>WHITE</td><td>M090</td><td class='num'>30</td></tr>
+<tr><td>FU100191M-M120</td><td>FU100191M</td><td>FE LO 1920 WHT/GUM/TUMBL</td><td>WHITE</td><td>M120</td><td class='num'>28</td></tr>
+<tr><td>FU100239U-M030</td><td>FU100239U</td><td>FELO1920 GMGND/WWHT/BLK/</td><td>WHISPER WHITE/BK/GLDMET</td><td>M030</td><td class='num'>28</td></tr>
+<tr><td>FU100256U-M090</td><td>FU100256U</td><td>FELO 1920 RF BNE WH/WW/G</td><td>BONE/WHISPER WH/GUM</td><td>M090</td><td class='num'>28</td></tr>
+<tr><td>FU100228U-M070</td><td>FU100228U</td><td>FE LO AV BLACK/IVORY CAN</td><td>BLACK/IVORY</td><td>M070</td><td class='num'>25</td></tr>
+<tr><td>FU100240U-M030</td><td>FU100240U</td><td>FELO1920GMGND OFFWHT/NVY</td><td>NAVY/OFFWHT/GLDMET</td><td>M030</td><td class='num'>25</td></tr>
+<tr><td>FU100252U-M100</td><td>FU100252U</td><td>FELO 1920 RF WHITE</td><td>WHITE</td><td>M100</td><td class='num'>25</td></tr>
+<tr><td>FU100239U-M040</td><td>FU100239U</td><td>FELO1920 GMGND/WWHT/BLK/</td><td>WHISPER WHITE/BK/GLDMET</td><td>M040</td><td class='num'>24</td></tr>
+<tr><td>FU100256U-M100</td><td>FU100256U</td><td>FELO 1920 RF BNE WH/WW/G</td><td>BONE/WHISPER WH/GUM</td><td>M100</td><td class='num'>24</td></tr>
+<tr><td>FU100115W-M050</td><td>FU100115W</td><td>FE MID 1920 WHITE CVS/BL</td><td>WHITE/BLUE/RED</td><td>M050</td><td class='num'>23</td></tr>
+<tr><td>FU100238U-M030</td><td>FU100238U</td><td>FELO1920GUMGRD BLK/OFWHT</td><td>BLACK/OFFWHT/GLDMET</td><td>M030</td><td class='num'>22</td></tr>
+<tr><td>FU100232U-M050</td><td>FU100232U</td><td>FE LO 1920 RYU WHT/RED/M</td><td>WHITE/RED/MULTI</td><td>M050</td><td class='num'>21</td></tr>
+<tr><td>FU100206U-M090</td><td>FU100206U</td><td>FE LO 1920 SLIP ON OFF W</td><td>OFF WHITE</td><td>M090</td><td class='num'>19</td></tr>
+<tr><td>FU100252U-M130</td><td>FU100252U</td><td>FELO 1920 RF WHITE</td><td>WHITE</td><td>M130</td><td class='num'>19</td></tr>
+<tr><td>FK100029C-M110</td><td>FK100029C</td><td>FE LO 1920 KIDS EL NAVY </td><td>NAVY</td><td>M110</td><td class='num'>18</td></tr>
+<tr><td>FU100201U-M120</td><td>FU100201U</td><td>FE LO 1920 WHIT/NAVY CVS</td><td>WHITE/NAVY</td><td>M120</td><td class='num'>17</td></tr>
+<tr><td>FU100207U-M140</td><td>FU100207U</td><td>FE LO 1920 SLIP ON BLACK</td><td>BLACK/WHITE</td><td>M140</td><td class='num'>17</td></tr>
+<tr><td>FU100165W-M050</td><td>FU100165W</td><td>FELO1920 BK TMBLD/BLK LO</td><td>BLACK/WHITE</td><td>M050</td><td class='num'>16</td></tr>
+<tr><td>FU100236U-M060</td><td>FU100236U</td><td>FE LO 1920 EXO BLK/ORG/V</td><td>BLACK/ORG/VGLASS</td><td>M060</td><td class='num'>12</td></tr>
+<tr><td>FU100236U-M030</td><td>FU100236U</td><td>FE LO 1920 EXO BLK/ORG/V</td><td>BLACK/ORG/VGLASS</td><td>M030</td><td class='num'>10</td></tr>
+<tr><td>FU100240U-M040</td><td>FU100240U</td><td>FELO1920GMGND OFFWHT/NVY</td><td>NAVY/OFFWHT/GLDMET</td><td>M040</td><td class='num'>10</td></tr>
+<tr><td>FK100028C-M010</td><td>FK100028C</td><td>FELO1920 KID EL RED/BLU/</td><td>RED/BLUE/RED</td><td>M010</td><td class='num'>9</td></tr>
+<tr><td>FK100029C-M020</td><td>FK100029C</td><td>FE LO 1920 KIDS EL NAVY </td><td>NAVY</td><td>M020</td><td class='num'>9</td></tr>
+<tr><td>FU100230U-M100</td><td>FU100230U</td><td>FE LO AV WHITE/ROYAL CAN</td><td>WHITE/ROYAL</td><td>M100</td><td class='num'>8</td></tr>
+<tr><td>FU100232U-M040</td><td>FU100232U</td><td>FE LO 1920 RYU WHT/RED/M</td><td>WHITE/RED/MULTI</td><td>M040</td><td class='num'>8</td></tr>
+<tr><td>FU100252U-M120</td><td>FU100252U</td><td>FELO 1920 RF WHITE</td><td>WHITE</td><td>M120</td><td class='num'>8</td></tr>
+<tr><td>FU100178W-M060</td><td>FU100178W</td><td>FE LO MULE BLACK CVS/BLK</td><td>BLACK</td><td>M060</td><td class='num'>7</td></tr>
+<tr><td>FU100222U-M100</td><td>FU100222U</td><td>FELO1920 COLORSPLIT WHT/</td><td>WHITE/BLUE/RED</td><td>M100</td><td class='num'>6</td></tr>
+<tr><td>FK100029C-M120</td><td>FK100029C</td><td>FE LO 1920 KIDS EL NAVY </td><td>NAVY</td><td>M120</td><td class='num'>5</td></tr>
+<tr><td>FU100230U-M090</td><td>FU100230U</td><td>FE LO AV WHITE/ROYAL CAN</td><td>WHITE/ROYAL</td><td>M090</td><td class='num'>5</td></tr>
+<tr><td>FU100236U-M040</td><td>FU100236U</td><td>FE LO 1920 EXO BLK/ORG/V</td><td>BLACK/ORG/VGLASS</td><td>M040</td><td class='num'>5</td></tr>
+<tr><td>FU100238U-M040</td><td>FU100238U</td><td>FELO1920GUMGRD BLK/OFWHT</td><td>BLACK/OFFWHT/GLDMET</td><td>M040</td><td class='num'>5</td></tr>
+<tr><td>FK100026C-M010</td><td>FK100026C</td><td>FE LO 1920 KIDS BLK CVS/</td><td>BLACK/BLUE/RED</td><td>M010</td><td class='num'>4</td></tr>
+<tr><td>FU100189M-M130</td><td>FU100189M</td><td>FE MID 1920 BLACK CANVAS</td><td>BLACK</td><td>M130</td><td class='num'>4</td></tr>
+<tr><td>FU100240U-M020</td><td>FU100240U</td><td>FELO1920GMGND OFFWHT/NVY</td><td>NAVY/OFFWHT/GLDMET</td><td>M020</td><td class='num'>4</td></tr>
+<tr><td>FU100207U-M110</td><td>FU100207U</td><td>FE LO 1920 SLIP ON BLACK</td><td>BLACK/WHITE</td><td>M110</td><td class='num'>3</td></tr>
+<tr><td>FU100239U-M020</td><td>FU100239U</td><td>FELO1920 GMGND/WWHT/BLK/</td><td>WHISPER WHITE/BK/GLDMET</td><td>M020</td><td class='num'>3</td></tr>
+<tr><td>FE02021001-M040</td><td>FE02021001</td><td>FELO1920 PWRLFT BK/RD/NM</td><td>BLACK/RD/NIMBUSCLD/GUM</td><td>M040</td><td class='num'>2</td></tr>
+<tr><td>FE02021001-M090</td><td>FE02021001</td><td>FELO1920 PWRLFT BK/RD/NM</td><td>BLACK/RD/NIMBUSCLD/GUM</td><td>M090</td><td class='num'>2</td></tr>
+<tr><td>FK100028C-M130</td><td>FK100028C</td><td>FELO1920 KID EL RED/BLU/</td><td>RED/BLUE/RED</td><td>M130</td><td class='num'>2</td></tr>
+<tr><td>FU100166M-M090</td><td>FU100166M</td><td>FELO1920 WHITE TMB/WHT/B</td><td>WHITE/BLACK</td><td>M090</td><td class='num'>2</td></tr>
+<tr><td>FU100194M-M090</td><td>FU100194M</td><td>FE LO 1920 OLIVECVS/BLK</td><td>OLIVE/BLACK</td><td>M090</td><td class='num'>2</td></tr>
+<tr><td>FU100201U-M110</td><td>FU100201U</td><td>FE LO 1920 WHIT/NAVY CVS</td><td>WHITE/NAVY</td><td>M110</td><td class='num'>2</td></tr>
+<tr><td>FU100204U-M100</td><td>FU100204U</td><td>FE LO 1920 BLACK/GREEN C</td><td>BLACK/NEON GREEN</td><td>M100</td><td class='num'>2</td></tr>
+<tr><td>FU100232U-M030</td><td>FU100232U</td><td>FE LO 1920 RYU WHT/RED/M</td><td>WHITE/RED/MULTI</td><td>M030</td><td class='num'>2</td></tr>
+<tr><td>FU100232U-M070</td><td>FU100232U</td><td>FE LO 1920 RYU WHT/RED/M</td><td>WHITE/RED/MULTI</td><td>M070</td><td class='num'>2</td></tr>
+<tr><td>FU100245U-M120</td><td>FU100245U</td><td>FELO1920CORENEUT CHIVE/W</td><td>CHIVE/WHP WHITE</td><td>M120</td><td class='num'>2</td></tr>
+<tr><td>FE02021001-M060</td><td>FE02021001</td><td>FELO1920 PWRLFT BK/RD/NM</td><td>BLACK/RD/NIMBUSCLD/GUM</td><td>M060</td><td class='num'>1</td></tr>
+<tr><td>FK100029C-M030</td><td>FK100029C</td><td>FE LO 1920 KIDS EL NAVY </td><td>NAVY</td><td>M030</td><td class='num'>1</td></tr>
+<tr><td>FU100148W-M090</td><td>FU100148W</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M090</td><td class='num'>1</td></tr>
+<tr><td>FU100148W-M100</td><td>FU100148W</td><td>FE LO 1920 RE CVS/BLU/RE</td><td>RED/BLUE/RED</td><td>M100</td><td class='num'>1</td></tr>
+<tr><td>FU100165M-M070</td><td>FU100165M</td><td>FELO1920 BK TMBLD/BLK LO</td><td>BLACK/WHITE</td><td>M070</td><td class='num'>1</td></tr>
+<tr><td>FU100166M-M080</td><td>FU100166M</td><td>FELO1920 WHITE TMB/WHT/B</td><td>WHITE/BLACK</td><td>M080</td><td class='num'>1</td></tr>
+<tr><td>FU100166W-M050</td><td>FU100166W</td><td>FELO1920 WHITE TMB/WHT/B</td><td>WHITE/BLACK</td><td>M050</td><td class='num'>1</td></tr>
+<tr><td>FU100167W-M050</td><td>FU100167W</td><td>FE LO 1920 WHITE CVS GRN</td><td>WHITE/GREEN</td><td>M050</td><td class='num'>1</td></tr>
+<tr><td>FU100173W-M050</td><td>FU100173W</td><td>FELO1920MULE WHT CVS/RED</td><td>WHITE/RED/BLUE</td><td>M050</td><td class='num'>1</td></tr>
+<tr><td>FU100178W-M080</td><td>FU100178W</td><td>FE LO MULE BLACK CVS/BLK</td><td>BLACK</td><td>M080</td><td class='num'>1</td></tr>
+<tr><td>FU100178W-M100</td><td>FU100178W</td><td>FE LO MULE BLACK CVS/BLK</td><td>BLACK</td><td>M100</td><td class='num'>1</td></tr>
+<tr><td>FU100188W-M050</td><td>FU100188W</td><td>FE MID 1920  TRIPLE OFFW</td><td>OFF WHITE</td><td>M050</td><td class='num'>1</td></tr>
+<tr><td>FU100188W-M060</td><td>FU100188W</td><td>FE MID 1920  TRIPLE OFFW</td><td>OFF WHITE</td><td>M060</td><td class='num'>1</td></tr>
+<tr><td>FU100189W-M050</td><td>FU100189W</td><td>FE MID 1920 BLACK CANVAS</td><td>BLACK</td><td>M050</td><td class='num'>1</td></tr>
+<tr><td>FU100194M-M100</td><td>FU100194M</td><td>FE LO 1920 OLIVECVS/BLK</td><td>OLIVE/BLACK</td><td>M100</td><td class='num'>1</td></tr>
+<tr><td>FU100194M-M130</td><td>FU100194M</td><td>FE LO 1920 OLIVECVS/BLK</td><td>OLIVE/BLACK</td><td>M130</td><td class='num'>1</td></tr>
+<tr><td>FU100195M-M100</td><td>FU100195M</td><td>FE LO 1920 NAVY CANVAS</td><td>NAVY</td><td>M100</td><td class='num'>1</td></tr>
+<tr><td>FU100201U-M040</td><td>FU100201U</td><td>FE LO 1920 WHIT/NAVY CVS</td><td>WHITE/NAVY</td><td>M040</td><td class='num'>1</td></tr>
+<tr><td>FU100204U-M090</td><td>FU100204U</td><td>FE LO 1920 BLACK/GREEN C</td><td>BLACK/NEON GREEN</td><td>M090</td><td class='num'>1</td></tr>
+<tr><td>FU100206U-M030</td><td>FU100206U</td><td>FE LO 1920 SLIP ON OFF W</td><td>OFF WHITE</td><td>M030</td><td class='num'>1</td></tr>
+<tr><td>FU100210U-M040</td><td>FU100210U</td><td>FE LO 1920 BLACK/RAINBOW</td><td>BLACK/RAINBOW</td><td>M040</td><td class='num'>1</td></tr>
+<tr><td>FU100210U-M140</td><td>FU100210U</td><td>FE LO 1920 BLACK/RAINBOW</td><td>BLACK/RAINBOW</td><td>M140</td><td class='num'>1</td></tr>
+<tr><td>FU100228U-M020</td><td>FU100228U</td><td>FE LO AV BLACK/IVORY CAN</td><td>BLACK/IVORY</td><td>M020</td><td class='num'>1</td></tr>
+<tr><td>FU100228U-M050</td><td>FU100228U</td><td>FE LO AV BLACK/IVORY CAN</td><td>BLACK/IVORY</td><td>M050</td><td class='num'>1</td></tr>
+<tr><td>FU100228U-M120</td><td>FU100228U</td><td>FE LO AV BLACK/IVORY CAN</td><td>BLACK/IVORY</td><td>M120</td><td class='num'>1</td></tr>
+<tr><td>FU100228U-M130</td><td>FU100228U</td><td>FE LO AV BLACK/IVORY CAN</td><td>BLACK/IVORY</td><td>M130</td><td class='num'>1</td></tr>
+<tr><td>FU100229U-M090</td><td>FU100229U</td><td>FE LO AV IVORY/GREEN CVS</td><td>IVORY/GREEN</td><td>M090</td><td class='num'>1</td></tr>
+<tr><td>FU100229U-M120</td><td>FU100229U</td><td>FE LO AV IVORY/GREEN CVS</td><td>IVORY/GREEN</td><td>M120</td><td class='num'>1</td></tr>
+<tr><td>FU100229U-M130</td><td>FU100229U</td><td>FE LO AV IVORY/GREEN CVS</td><td>IVORY/GREEN</td><td>M130</td><td class='num'>1</td></tr>
+<tr><td>FU100230U-M020</td><td>FU100230U</td><td>FE LO AV WHITE/ROYAL CAN</td><td>WHITE/ROYAL</td><td>M020</td><td class='num'>1</td></tr>
+<tr><td>FU100231U-M030</td><td>FU100231U</td><td>FELO1920CHUNLI IVORY/BLU</td><td>IVORY/BLUE/MULTI</td><td>M030</td><td class='num'>1</td></tr>
+<tr><td>FU100231U-M060</td><td>FU100231U</td><td>FELO1920CHUNLI IVORY/BLU</td><td>IVORY/BLUE/MULTI</td><td>M060</td><td class='num'>1</td></tr>
+<tr><td>FU100232U-M060</td><td>FU100232U</td><td>FE LO 1920 RYU WHT/RED/M</td><td>WHITE/RED/MULTI</td><td>M060</td><td class='num'>1</td></tr>
+<tr><td>FU100232U-M080</td><td>FU100232U</td><td>FE LO 1920 RYU WHT/RED/M</td><td>WHITE/RED/MULTI</td><td>M080</td><td class='num'>1</td></tr>
+<tr><td>FU100236U-M080</td><td>FU100236U</td><td>FE LO 1920 EXO BLK/ORG/V</td><td>BLACK/ORG/VGLASS</td><td>M080</td><td class='num'>1</td></tr>
+<tr><td>FU100240U-M090</td><td>FU100240U</td><td>FELO1920GMGND OFFWHT/NVY</td><td>NAVY/OFFWHT/GLDMET</td><td>M090</td><td class='num'>1</td></tr>
+<tr><td>FU100252U-M110</td><td>FU100252U</td><td>FELO 1920 RF WHITE</td><td>WHITE</td><td>M110</td><td class='num'>1</td></tr>
+<tr><td>FU100253U-M090</td><td>FU100253U</td><td>FELO 1920 RF BLACK</td><td>BLACK</td><td>M090</td><td class='num'>1</td></tr>
+<tr><td>FU100256U-M070</td><td>FU100256U</td><td>FELO 1920 RF BNE WH/WW/G</td><td>BONE/WHISPER WH/GUM</td><td>M070</td><td class='num'>1</td></tr>
+<tr><td>FU100256U-M110</td><td>FU100256U</td><td>FELO 1920 RF BNE WH/WW/G</td><td>BONE/WHISPER WH/GUM</td><td>M110</td><td class='num'>1</td></tr>
+<tr><td>FU100256U-M120</td><td>FU100256U</td><td>FELO 1920 RF BNE WH/WW/G</td><td>BONE/WHISPER WH/GUM</td><td>M120</td><td class='num'>1</td></tr>
+<tr><td>FU100256U-M130</td><td>FU100256U</td><td>FELO 1920 RF BNE WH/WW/G</td><td>BONE/WHISPER WH/GUM</td><td>M130</td><td class='num'>1</td></tr></tbody></table>
+  </div>
+</div>
+
+<p class="sub" style="margin-top:30px;text-align:center">修正于 2026-07-16 · 实际搬仓 = 整年要求合计 8,954 双 · 销毁 = 44,053 双</p>
+</div>
+
+<script>
+function recalc(){
+  // A 处置费
+  const dBaseQ=+document.getElementById('dBaseQ').value;
+  const dBaseP=+document.getElementById('dBaseP').value;
+  const dActQ=+document.getElementById('dActQ').value;
+  const dUnit=dBaseP/dBaseQ;
+  const dCost=dUnit*dActQ;
+  const dRatio=dActQ/dBaseQ;
+  document.getElementById('dRatio').textContent=dRatio.toFixed(3)+'×';
+  document.getElementById('dCost').textContent='$'+dCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('fD').textContent='单价=$'+dBaseP.toLocaleString()+'÷'+dBaseQ.toLocaleString()+'=$'+dUnit.toFixed(4)+'/双 ｜ 实际费=$'+dUnit.toFixed(4)+'×'+dActQ.toLocaleString()+'=$'+dCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' ｜ 比例 '+dRatio.toFixed(3)+'×';
+
+  // B 贴标
+  const lBaseQ=+document.getElementById('lBaseQ').value;
+  const lActQ=+document.getElementById('lActQ').value;
+  const lCap=1500;
+  const lDays=Math.ceil(lActQ/lCap);
+  const lRatio=lActQ/lBaseQ;
+  document.getElementById('lRatio').textContent=lRatio.toFixed(3)+'×';
+  document.getElementById('lDays').textContent=lDays;
+  document.getElementById('fL').textContent='工期=CEIL('+lActQ.toLocaleString()+'÷'+lCap+')='+lDays+'天 ｜ 比例 '+lRatio.toFixed(3)+'× (基准 '+lBaseQ.toLocaleString()+'双→'+Math.ceil(lBaseQ/lCap)+'天)';
+
+  // C FTL
+  const fBaseQ=+document.getElementById('fBaseQ').value;
+  const fActQ=+document.getElementById('fActQ').value;
+  const rateA=+document.getElementById('fRateA').value;
+  const rateB=+document.getElementById('fRateB').value;
+  const perLoad=fBaseQ/8;
+  const fLoads=Math.ceil(fActQ/perLoad);
+  const fCostA=fLoads*rateA, fCostB=fLoads*rateB;
+  const fRatio=fActQ/fBaseQ;
+  document.getElementById('fRatio').textContent=fRatio.toFixed(3)+'×';
+  document.getElementById('fCostA').textContent='$'+fCostA.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('fCostB').textContent='$'+fCostB.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('fF').textContent='每车双数='+perLoad.toFixed(0)+' ｜ 车次数=CEIL('+fActQ.toLocaleString()+'÷'+perLoad.toFixed(0)+')='+fLoads+' ｜ A=$'+fCostA.toLocaleString()+' B=$'+fCostB.toLocaleString()+' ｜ 比例 '+fRatio.toFixed(3)+'×';
+
+  // 合计
+  const totA=dCost+fCostA, totB=dCost+fCostB;
+  document.getElementById('totA').textContent='$'+totA.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('totB').textContent='$'+totB.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+document.querySelectorAll('input').forEach(i=>i.addEventListener('input',recalc));
+recalc();
+</script>
+</body>
+</html>
