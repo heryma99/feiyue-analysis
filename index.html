@@ -134,6 +134,25 @@ a.dl:hover{background:#0d0f14}
   </tr>
   <tr><td colspan="6"><div class="formula" id="fF"></div></td></tr>
 
+  <!-- D 谷仓出库费 -->
+  <tr><td class="sec" colspan="6">D. 谷仓出库费（YUSEN 提货 Pick-Up · 按 Cheryl 4/14 方法学：80%满箱 / 20%散件）</td></tr>
+  <tr>
+    <td>出库双数</td>
+    <td><input class="in" id="oQ" type="number" value="8954"></td>
+    <td>满箱占比 <input class="in sm" id="oFullPct" type="number" value="80">% ｜ 每箱 <input class="in sm" id="oPerCt" type="number" value="6"> 件</td>
+    <td class="ratio" id="oCartons">—</td>
+    <td>满箱费 <span class="big" id="oFullCost">$0</span></td>
+    <td>散件费 <span class="big" id="oUnitCost">$0</span></td>
+  </tr>
+  <tr>
+    <td>单价</td>
+    <td>整箱 $/箱 <input class="in sm" id="oCartRate" type="number" value="1.79"></td>
+    <td>单位拣货 $/双 <input class="in sm" id="oUnitRate" type="number" value="1.15"></td>
+    <td>BOL <input class="in sm" id="oBolN" type="number" value="2">张 × <input class="in sm" id="oBolRate" type="number" value="6.83">$</td>
+    <td colspan="2">出库费合计 <span class="big" id="oOut">$0</span> <span style="font-size:11px;opacity:.7">（YUSEN 合同 Schedule C 费率）</span></td>
+  </tr>
+  <tr><td colspan="6"><div class="formula" id="fD"></div></td></tr>
+
   <!-- 合计 -->
   <tr style="border-top:2px solid var(--acc)">
     <td class="sec">项目总预估</td>
@@ -143,7 +162,7 @@ a.dl:hover{background:#0d0f14}
   </tr>
 </tbody>
 </table>
-<div class="note">💡 比例 = 实际量 ÷ 飞跃基准量。处置费单价 = $5,823 ÷ 10,000 = $0.5823/双（原报价未含外箱拆装、城市认证费）。销毁实际量默认 = 53,007 − 8,954 = <b>44,053 双</b>（含 是 超额 33,437 + 不选 10,616）；若销毁口径不同，直接改「实际量」即可重算。贴标费邮件未给单价，仅给工期（1,500双/天）。<br><b>谷仓贴标（B2）</b>按你的规格预估：每件 1 张 SKU 标、每箱 2 张箱嘜、6 件/箱；单价默认为参考值（SKU标 $0.62/张取自 YUSEN 合同 Ticketing 条款、箱嘜 $0.30/张），<b>拿到谷仓实际报价后直接改单价即可实时重算</b>，并自动并入项目总预估。</div>
+<div class="note">💡 比例 = 实际量 ÷ 飞跃基准量。处置费单价 = $5,823 ÷ 10,000 = $0.5823/双（原报价未含外箱拆装、城市认证费）。销毁实际量默认 = 53,007 − 8,954 = <b>44,053 双</b>（含 是 超额 33,437 + 不选 10,616）；若销毁口径不同，直接改「实际量」即可重算。贴标费邮件未给单价，仅给工期（1,500双/天）。<br><b>谷仓贴标（B2）</b>按你的规格预估：每件 1 张 SKU 标、每箱 2 张箱嘜、6 件/箱；单价默认为参考值（SKU标 $0.62/张取自 YUSEN 合同 Ticketing 条款、箱嘜 $0.30/张），<b>拿到谷仓实际报价后直接改单价即可实时重算</b>，并自动并入项目总预估。<br><b>谷仓出库费（D）</b>= YUSEN 从库存提货装车发运的 Pick-Up 费，按 Cheryl 2026/4/14 预估方法学（80% 满箱走整箱配送、20% 散件走单位拣货）：整箱配送 $1.79/箱（合同 $1.70 上浮 5%）、单位拣货 $1.15/双、BOL $6.83/张（均取自 YUSEN 合同 Schedule C）。Cheryl 4/14 对全量库存的 Pick-Up 预估为 $25,616.79；本行按实际出库双数与上述费率折算，占比/每箱件数/单价均可改。</div>
 </div>
 
 <h2>④ 搬仓 SKU 清单（是否选款=是，含整年要求）</h2>
@@ -534,8 +553,29 @@ function recalc(){
   document.getElementById('fCostB').textContent='$'+fCostB.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById('fF').textContent='每车双数='+perLoad.toFixed(0)+' ｜ 车次数=CEIL('+fActQ.toLocaleString()+'÷'+perLoad.toFixed(0)+')='+fLoads+' ｜ A=$'+fCostA.toLocaleString()+' B=$'+fCostB.toLocaleString()+' ｜ 比例 '+fRatio.toFixed(3)+'×';
 
+  // D 谷仓出库费 (YUSEN Pick-Up, 80/20)
+  const oQ=+document.getElementById('oQ').value;
+  const oFullPct=+document.getElementById('oFullPct').value/100;
+  const oPerCt=+document.getElementById('oPerCt').value;
+  const oCartRate=+document.getElementById('oCartRate').value;
+  const oUnitRate=+document.getElementById('oUnitRate').value;
+  const oBolN=+document.getElementById('oBolN').value;
+  const oBolRate=+document.getElementById('oBolRate').value;
+  const oFullQ=oQ*oFullPct;
+  const oUnitQ=oQ*(1-oFullPct);
+  const oCartons=Math.ceil(oFullQ/oPerCt);
+  const oFullCost=oCartons*oCartRate;
+  const oUnitCost=oUnitQ*oUnitRate;
+  const oBolCost=oBolN*oBolRate;
+  const oOut=oFullCost+oUnitCost+oBolCost;
+  document.getElementById('oCartons').textContent=oCartons.toLocaleString()+' 箱';
+  document.getElementById('oFullCost').textContent='$'+oFullCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('oUnitCost').textContent='$'+oUnitCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('oOut').textContent='$'+oOut.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('fD').textContent='满箱='+Math.round(oFullQ).toLocaleString()+'双→CEIL(÷'+oPerCt+')='+oCartons.toLocaleString()+'箱×$'+oCartRate+'=$'+oFullCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' ｜ 散件='+Math.round(oUnitQ).toLocaleString()+'双×$'+oUnitRate+'=$'+oUnitCost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' ｜ BOL='+oBolN+'×$'+oBolRate+'=$'+oBolCost.toFixed(2)+' ｜ 合计=$'+oOut.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
   // 合计
-  const totA=dCost+fCostA+gCost, totB=dCost+fCostB+gCost;
+  const totA=dCost+fCostA+gCost+oOut, totB=dCost+fCostB+gCost+oOut;
   document.getElementById('totA').textContent='$'+totA.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById('totB').textContent='$'+totB.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
